@@ -1,0 +1,66 @@
+---
+description: How to add or change an Android app in this monorepo.
+alwaysApply: true
+---
+
+Android apps are top-level folders, built in CI and published as a sideload APK plus a landing page. Follow this whenever you create or change one.
+
+## Project
+
+1. One app per top-level folder. Put `SPEC.md` in that folder (see the spec rule).
+2. Kotlin and Jetpack Compose. Package and `applicationId`: `com.tepmex.<compactname>` (lowercase, no hyphens).
+3. Toolchain, matching the current apps in CloudAgenticCoding:
+   - Android Gradle Plugin `8.9.2`
+   - Kotlin `2.1.21` and `org.jetbrains.kotlin.plugin.compose` `2.1.21`
+   - Gradle wrapper `8.11.1`
+   - JVM / `jvmTarget` 17
+   - `compileSdk` and `targetSdk` 36
+   - `minSdk` 34 unless the task explicitly needs an older device
+4. Release builds: `isMinifyEnabled = true`, `isShrinkResources = true`, default optimize ProGuard file plus `proguard-rules.pro`.
+
+## Signing
+
+Every app is signed with the shared sideload key so a later APK installs over the previous one and keeps app data.
+
+1. Copy `android/sideload.keystore` and `android/sideload-signing.properties` into the app directory. Do not generate a new keystore.
+2. In `app/build.gradle.kts`, before the `android {}` block:
+
+```kotlin
+extra["sideloadPropertyPrefix"] = "compactname"
+apply(from = rootProject.file("../android/sideload-signing.gradle.kts"))
+
+val autoVersionCode: Int = extra["autoVersionCode"] as Int
+val useCustomSigning: Boolean = extra["useCustomSigning"] as Boolean
+```
+
+3. `versionCode = autoVersionCode` and `versionName = "1.0.$autoVersionCode"`. The shared script sets `autoVersionCode` from the unix time, so each build sorts after the previous one.
+4. Add a `sideload` signing config when `useCustomSigning` is true, and use it for both `debug` and `release`. Otherwise fall back to the debug config.
+5. `sideloadPropertyPrefix` is lowercase letters only. Optional local override keys in `local.properties`: `<prefix>.signingStoreFile`, `<prefix>.signingStorePassword`, `<prefix>.signingKeyAlias`, `<prefix>.signingKeyPassword`.
+
+CI rejects an APK whose certificate is not `android/expected-sideload-cert-sha256.txt`.
+
+## Landing page
+
+`site/index.html` is the GitHub Pages page for the APK.
+
+- Download link: `<a class="download" href="<folder>.apk">`.
+- Include a closed marker pair so the deploy footer can be replaced:
+
+```html
+<!-- deploy-footer -->
+<!-- deploy-footer -->
+```
+
+- Commit `site/styles.css` as a copy of `android/landing/styles.css` for local preview. Publish overwrites it with `android/landing/styles.css`.
+
+## Catalog
+
+Append the folder name to `ANDROID_APPS` in `scripts/ci-apps.sh`. That is the only app list; do not hardcode it in `.github/workflows/deploy.yml`.
+
+A WebView (or other) wrapper around a web app in this repo also:
+
+- implements `<app>/scripts/sync-web-assets.sh` (CI runs it before `assembleRelease` when the file exists)
+- returns the wrapper name from `android_for_web` for that web folder
+- returns `bun` or `node` from `android_web_runtime` so CI installs the runtime that the sync script needs
+
+Changing `android/sideload-signing.gradle.kts`, the keystore, the properties, or the expected certificate rebuilds every Android app. Changing `android/landing/` or `scripts/inject-static-site-footer.ts` republishes landing pages without a Gradle build.

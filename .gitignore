@@ -1,12 +1,49 @@
-*.iml
-.gradle/
-local.properties
-.idea/
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+*.log
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
 .DS_Store
-build/
+
+# Local Android SDK (cloud agent bootstrap)
+android-sdk/
+*.iml
+
+# Gradle / Android build output in any app folder
+**/.gradle/
+**/build/
+**/local.properties
 captures/
-.externalNativeBuild/
 .cxx/
 *.apk
 *.aab
-output/
+
+# Local CI workspace
+/deploy/
+/previous-site/
+/artifacts/

@@ -1,76 +1,40 @@
-# Haptic Lab
+# TactileReadingExperiments
 
-Нативное Android-приложение для исследования тактильного чтения. Палец движется по горизонтальной дорожке, а вибрация включается и выключается по положению пальца, а не по заранее заданному таймеру.
+Monorepo for tactile-reading experiments. Each app lives in its own top-level folder and is built and deployed independently to a matching path on **project** GitHub Pages.
 
-Целевое устройство — Honor 400 на Android / MagicOS. Сервер, регистрация и интернет для работы не нужны.
+The layout, CI pipeline, and Android sideload signing match [CloudAgenticCoding](https://github.com/TepMex/CloudAgenticCoding).
 
-## Сборка
+**Live site base:** [https://tepmex.github.io/TactileReadingExperiments/](https://tepmex.github.io/TactileReadingExperiments/)
 
-Нужны JDK 21, Android SDK Platform 37.2 и Android Studio или командная строка.
+## Apps
 
-```bash
-# SDK Platform 37.2 и Build-Tools. Android Studio подставит sdk.dir в local.properties.
-./gradlew :app:assembleDebug
-./gradlew :core:test
-```
+| Folder | Live site | Description |
+| ------ | --------- | ----------- |
+| [haptic-lab](haptic-lab/) | [haptic-lab](https://tepmex.github.io/TactileReadingExperiments/haptic-lab/) | Native Android lab for spatial tactile reading: vibrator diagnostics, a signal generator, zone patterns, a speed test, psychophysics, and a small tactile alphabet. |
 
-Стек: Kotlin, Jetpack Compose, Material 3, Gradle Kotlin DSL. `minSdk` 26, `compileSdk` 37.2, `targetSdk` 36. Новые вызовы вибрации закрыты проверками версии и возможностей устройства.
+## Pipeline
 
-Готовый debug APK после сборки:
+`.github/workflows/deploy.yml` runs on every push to `main`:
 
-`app/build/outputs/apk/debug/app-debug.apk`
+- **Web** apps: `bun install --frozen-lockfile` and `bun run build`. Output is `dist/index.html`, published at `/<repository>/<folder>/`.
+- **Android** apps: Java 21, Android SDK, `assembleRelease`, then a check that the APK is signed with the shared sideload certificate. Published at `/<repository>/<folder>/<folder>.apk` with `site/index.html`.
+- Unchanged apps are copied from the existing `gh-pages` branch. A manual **workflow_dispatch → full_deploy** rebuilds everything.
 
-Установка на Honor 400:
+Develop from inside the app directory. Shared scripts live in `scripts/`. Shared Android signing and landing CSS live in `android/`.
 
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+## Adding a web app
 
-Либо откройте проект в Android Studio и запустите конфигурацию `app`. Разрешение `android.permission.VIBRATE` выдаётся при установке. Root не нужен.
+1. Create a top-level folder with `SPEC.md` and a Bun app whose `build` script writes `dist/index.html`.
+2. Honor `GH_PAGES_PUBLIC_PATH` (CI sets `/TactileReadingExperiments/<folder>/`).
+3. Append the folder to `WEB_APPS` in `scripts/ci-apps.sh`.
 
-Перед опытами в системных настройках MagicOS проверьте интенсивность вибрации: оболочка может ослаблять эффекты.
+## Adding an Android app
 
-## Разделы
+Rules for agents are in `.cursor/rules/android-apps.mdc`. Short version:
 
-1. **Диагностика.** Производитель, модель, Android, SDK и `SDK_INT_FULL`, число актуаторов через `VibratorManager` (с API 31; раньше — обычный `Vibrator`), амплитуда, примитивы, предопределённые эффекты, резонансная частота и Q с API 34. Если значения нет или это NaN, показывается «Не предоставляется устройством». При известных Q и f0 считается `t10 = Q·ln(10)/(π·f0)` и прямо сказано, что это свободное затухание, а не измеренная остановка мотора. Для API 36 показываются конверты и профиль частот, для API 37.2 — `VibrationEffect.Builder` и пресеты. Здесь же калибровка миллиметров по линейке и переключатель подробного журнала.
-2. **Генератор.** `createOneShot`, один `createWaveform` на всю последовательность, предопределённые эффекты, композиция примитивов, `BasicEnvelopeBuilder`, `WaveformEnvelopeBuilder` и `VibrationEffect.Builder`, если API и оборудование их принимают. Есть наборы 20/20, 20/10, 10/10, 50/20 и 100/50 мс. Кнопка «Стоп» сразу вызывает `cancel()`. Диаграмма подписана как запрошенный управляющий сигнал.
-3. **Пространственные рисунки.** 3–20 зон, ширина в миллиметрах, правка касанием, примеры, сохранение рисунков, ход в обе стороны, остановка при отрыве пальца. Новый `vibrate()` уходит только при смене состояния и при обновлении конечного удержания примерно раз в 2 с. Фильтр дребезга задаётся в миллиметрах и отключается нулём. Скорость показывается в мм/с.
-4. **Скоростной тест.** Чередующиеся участки 1–10 мм, мгновенная, средняя и максимальная скорость, границы, время прохода и частота запрошенных переключений. После прохода — оценка 1–5. Результат сохраняется.
-5. **Эксперимент.** Различение одного и двух импульсов. Интервалы 10, 15, 20, 30, 40, 50, 75, 100 и 150 мс в случайном порядке плюс контрольные пробы с одним импульсом. До ответа параметры пробы не показываются. В конце — доля верных ответов, доля ложных «Два» и 95% интервал Уилсона. Есть лестница 2-вниз/1-вверх. Сессии можно сравнить и экспортировать.
-6. **Тактильная азбука.** Несколько демонстрационных знаков по зонам (по умолчанию 7, число меняется). Короткий текст склеивается в одну дорожку с промежутком между знаками. Палец может идти вперёд и назад, не отрываясь. Промежуток — место для будущей физической направляющей; программа бортик не создаёт.
+1. Top-level Kotlin / Compose project (`minSdk` 34, `compileSdk` / `targetSdk` 36) with `SPEC.md`.
+2. Copy `android/sideload.keystore` and `android/sideload-signing.properties` into the app and apply `android/sideload-signing.gradle.kts` from `app/build.gradle.kts`.
+3. Add `site/index.html` with a download link to `<folder>.apk` and a `<!-- deploy-footer -->` pair.
+4. Append the folder to `ANDROID_APPS` in `scripts/ci-apps.sh`.
 
-## Архитектура
-
-`core` — расчёты без Android: рисунки, геометрия зон, автомат вибрации, waveform, статистика, азбука, журнал и CSV/JSON. `app` вызывает аппаратные API и рисует интерфейс.
-
-Автомат `SpatialVibrationMachine` хранит защёлкнутую зону. Повторные события внутри той же зоны ON мотор не перезапускают. Выход, отрыв пальца, уход экрана в фон и предел удержания вызывают `cancel()`. Каждая команда удержания конечна.
-
-Пиксели переводятся в миллиметры через `xdpi` и ручной масштаб: измеренная линейкой ширина делится на системную. Скорость считается по меткам `MotionEvent`, перенесённым на `elapsedRealtimeNanos`.
-
-Журнал хранит монотонное время, координаты, скорость, зону, запрошенное состояние и момент вызова API. Подробные точки движения пишутся не чаще 20 раз в секунду и только если журнал включён. Сессии лежат в файлах приложения. Экспорт CSV и JSON отдаётся через системное меню «Поделиться».
-
-## Три уровня данных
-
-- **А.** Момент команды и события ввода. Это единственное, что приложение записывает по вибрации.
-- **Б.** Физический отклик мотора. По времени `Vibrator` он неизвестен. Нужен внешний датчик. Встроенный акселерометр не используется: частота, фильтрация и передача через корпус не дают достоверного измерения LRA.
-- **В.** Ощущение человека: оценки скорости и ответы «один» или «два».
-
-Программные задержки не подписываются как измеренное время остановки мотора.
-
-## Ограничения
-
-- Honor 400 не предполагается заранее: амплитуда, примитивы, конверты и API 37.2 проверяются на устройстве. Неподдерживаемый вызов не выполняется, на экране остаётся причина.
-- Удержание в зоне ON — повторные конечные `createOneShot`, а не бесконечный цикл. Обновление примерно раз в 2 с может ощущаться как шов; в журнале у него пометка `refresh=true`.
-- `t10` не учитывает активное торможение.
-- Оценка длительности примитива берётся из `getPrimitiveDurations` и не является измерением.
-- Конверт описывает контрольные точки, а не прямоугольный импульс. Слишком короткий шаг отклоняется, а не подменяется молча.
-- Системная интенсивность MagicOS и режим «не беспокоить» могут изменить или подавить эффект.
-- Доверительный интервал и порог лестницы описывают ответы, а не механику мотора.
-
-## Что проверено без телефона
-
-Модульные тесты `:core:test` покрывают сборку waveform и её предел 15 с, примеры рисунков, попадание в зону, глубину пересечения границы, автомат (без лишнего перезапуска, фильтр и его отключение, остановку при отрыве и выходе за дорожку, обновление удержания и предел времени), интервал Уилсона, случайный план с контролями, долю ложных «Два», лестницу, формулу `t10`, калибровку, перенос метки `MotionEvent`, скорость и проход дорожки, склейку азбуки, троттлинг журнала и CSV.
-
-Сборка `:app:compileDebugKotlin` и `:app:assembleDebug` проверяет, что вызовы `Vibrator`, `VibratorManager`, конвертов API 36 и `VibrationEffect.Builder` API 37.2 соответствуют установленной платформе SDK.
-
-На Honor 400 ещё нужно вручную проверить: слышимость и ощущение коротких импульсов, реальную поддержку амплитуды, примитивов и конвертов, отсутствие шва при проведении пальца, правдоподобие мм/с после калибровки линейкой, остановку при уходе в фон и читаемость экспорта CSV/JSON.
+APKs signed with that keystore upgrade in place. A different key means uninstalling once before the next install.
