@@ -1,0 +1,20 @@
+---
+description: Create SPEC.md at the root of every new project in this monorepo.
+alwaysApply: true
+---
+
+When starting a **new project** (new top-level folder or greenfield app/service):
+
+1. Create **`SPEC.md`** in that project's root directory **before or alongside** initial implementation.
+2. SPEC.md must capture at minimum:
+   - **Purpose** — what the project does and for whom
+   - **Requirements** — numbered functional requirements from the user/task
+   - **Interfaces** — APIs, URI schemes, CLI, file formats, external integrations
+   - **Data model** — key entities and persistence
+   - **UI / UX** — screens, flows, or commands (if applicable)
+   - **Out of scope** — explicit v1 boundaries
+   - **Acceptance criteria** — how to verify the spec is met
+3. Keep SPEC.md updated when requirements change materially; note breaking changes in the spec.
+4. Do not duplicate SPEC.md inside subfolders — one spec per project root (e.g. `anki-entertainer/SPEC.md`, not `anki-entertainer/app/SPEC.md`).
+
+This rule applies to Android apps, web apps, scripts packages, and any other new top-level project in the repository.
