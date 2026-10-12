@@ -77,7 +77,7 @@ names() {
   jq -r '[.[].name] | join(" ")' <<<"$json"
 }
 
-# --- Real catalog (empty until apps are registered) ---
+# --- Real catalog (scripts/ci-apps.sh) ---
 unset CI_APPS_SH
 # shellcheck source=ci-apps.sh
 source "$ROOT/scripts/ci-apps.sh"
@@ -90,7 +90,7 @@ assert_eq "$(value "$out" android_count)" 0 "empty readme android_count"
 
 out="$(run_plan empty-signing "android/sideload-signing.gradle.kts" "$TMP/empty-site")"
 assert_eq "$(value "$out" android_count)" "${#ANDROID_APPS[@]}" "empty signing android_count"
-assert_eq "$(value "$out" should_deploy)" false "empty signing should_deploy"
+assert_eq "$(value "$out" should_deploy)" true "empty signing should_deploy"
 
 out="$(run_plan empty-footer "scripts/inject-static-site-footer.ts" "$TMP/empty-site")"
 assert_eq "$(value "$out" refresh_android_landings)" true "empty footer refresh"

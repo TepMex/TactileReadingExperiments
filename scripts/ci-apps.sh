@@ -10,6 +10,7 @@ WEB_APPS=(
 )
 
 ANDROID_APPS=(
+  haptic-lab
 )
 
 # Repo-root files copied onto the site on every publish.

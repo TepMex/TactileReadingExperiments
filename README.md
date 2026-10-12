@@ -10,8 +10,7 @@ The layout, CI pipeline, and Android sideload signing match [CloudAgenticCoding]
 
 | Folder | Live site | Description |
 | ------ | --------- | ----------- |
-
-No apps yet. Add a folder, then register it in `scripts/ci-apps.sh`.
+| [haptic-lab](haptic-lab/) | [haptic-lab](https://tepmex.github.io/TactileReadingExperiments/haptic-lab/) | Native Android lab for spatial tactile reading: vibrator diagnostics, a signal generator, zone patterns, a speed test, psychophysics, and a small tactile alphabet. |
 
 ## Pipeline
 
