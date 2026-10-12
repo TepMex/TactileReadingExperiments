@@ -1,4 +1,4 @@
-package com.hapticlab.ui.components
+package com.tepmex.hapticlab.ui.components
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.Box
@@ -17,9 +17,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.offset
-import com.hapticlab.core.spatial.mmToPx
-import com.hapticlab.core.time.mapUptimeMillisToElapsedRealtimeNanos
-import com.hapticlab.haptics.LocatedSample
+import com.tepmex.hapticlab.core.spatial.mmToPx
+import com.tepmex.hapticlab.core.time.mapUptimeMillisToElapsedRealtimeNanos
+import com.tepmex.hapticlab.haptics.LocatedSample
 import kotlin.math.roundToInt
 
 @Composable

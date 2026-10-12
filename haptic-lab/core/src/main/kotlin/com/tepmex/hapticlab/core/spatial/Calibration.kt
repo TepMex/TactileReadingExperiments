@@ -1,4 +1,4 @@
-package com.hapticlab.core.spatial
+package com.tepmex.hapticlab.core.spatial
 
 /** Миллиметры на пиксель по системному xdpi. При негодном dpi используется 160. */
 fun systemMmPerPx(xdpi: Float): Float {

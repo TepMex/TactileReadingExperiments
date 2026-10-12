@@ -1,4 +1,4 @@
-package com.hapticlab.core.haptics
+package com.tepmex.hapticlab.core.haptics
 
 import kotlin.math.PI
 import kotlin.math.ln

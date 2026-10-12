@@ -1,4 +1,4 @@
-package com.hapticlab.core.metrics
+package com.tepmex.hapticlab.core.metrics
 
 import kotlin.math.abs
 

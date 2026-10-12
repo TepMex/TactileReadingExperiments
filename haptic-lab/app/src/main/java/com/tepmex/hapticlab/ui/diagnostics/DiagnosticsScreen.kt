@@ -1,4 +1,4 @@
-package com.hapticlab.ui.diagnostics
+package com.tepmex.hapticlab.ui.diagnostics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,13 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import com.hapticlab.core.spatial.calibratedMmPerPx
-import com.hapticlab.core.spatial.scaleFromMeasuredWidth
-import com.hapticlab.core.spatial.systemMmPerPx
-import com.hapticlab.ui.components.KeepScreenOn
-import com.hapticlab.ui.components.LevelBanner
-import com.hapticlab.ui.components.StopButton
-import com.hapticlab.ui.graph
+import com.tepmex.hapticlab.core.spatial.calibratedMmPerPx
+import com.tepmex.hapticlab.core.spatial.scaleFromMeasuredWidth
+import com.tepmex.hapticlab.core.spatial.systemMmPerPx
+import com.tepmex.hapticlab.ui.components.KeepScreenOn
+import com.tepmex.hapticlab.ui.components.LevelBanner
+import com.tepmex.hapticlab.ui.components.StopButton
+import com.tepmex.hapticlab.ui.graph
 
 @Composable
 fun DiagnosticsScreen(onBack: () -> Unit) {

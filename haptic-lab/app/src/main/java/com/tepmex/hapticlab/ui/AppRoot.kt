@@ -1,4 +1,4 @@
-package com.hapticlab.ui
+package com.tepmex.hapticlab.ui
 
 import android.app.Application
 import android.content.Context
@@ -20,17 +20,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.hapticlab.data.LabPreferences
-import com.hapticlab.data.SessionStore
-import com.hapticlab.haptics.HapticInventory
-import com.hapticlab.haptics.HapticsEngine
-import com.hapticlab.ui.alphabet.AlphabetScreen
-import com.hapticlab.ui.diagnostics.DiagnosticsScreen
-import com.hapticlab.ui.experiment.ExperimentScreen
-import com.hapticlab.ui.generator.GeneratorScreen
-import com.hapticlab.ui.home.HomeScreen
-import com.hapticlab.ui.spatial.SpatialScreen
-import com.hapticlab.ui.speed.SpeedScreen
+import com.tepmex.hapticlab.data.LabPreferences
+import com.tepmex.hapticlab.data.SessionStore
+import com.tepmex.hapticlab.haptics.HapticInventory
+import com.tepmex.hapticlab.haptics.HapticsEngine
+import com.tepmex.hapticlab.ui.alphabet.AlphabetScreen
+import com.tepmex.hapticlab.ui.diagnostics.DiagnosticsScreen
+import com.tepmex.hapticlab.ui.experiment.ExperimentScreen
+import com.tepmex.hapticlab.ui.generator.GeneratorScreen
+import com.tepmex.hapticlab.ui.home.HomeScreen
+import com.tepmex.hapticlab.ui.spatial.SpatialScreen
+import com.tepmex.hapticlab.ui.speed.SpeedScreen
 
 class AppGraph(context: Context) {
     private val appContext = context.applicationContext

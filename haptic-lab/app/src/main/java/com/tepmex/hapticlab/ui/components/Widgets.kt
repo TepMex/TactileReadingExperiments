@@ -1,4 +1,4 @@
-package com.hapticlab.ui.components
+package com.tepmex.hapticlab.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.hapticlab.core.signal.WaveformSpec
+import com.tepmex.hapticlab.core.signal.WaveformSpec
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

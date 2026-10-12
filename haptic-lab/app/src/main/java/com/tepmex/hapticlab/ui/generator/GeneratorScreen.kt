@@ -1,4 +1,4 @@
-package com.hapticlab.ui.generator
+package com.tepmex.hapticlab.ui.generator
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,16 +20,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.hapticlab.core.signal.SignalRequestException
-import com.hapticlab.core.signal.WaveformSpec
-import com.hapticlab.core.signal.buildPulseTrain
-import com.hapticlab.ui.components.ChoiceRow
-import com.hapticlab.ui.components.CommandDiagram
-import com.hapticlab.ui.components.IntSlider
-import com.hapticlab.ui.components.KeepScreenOn
-import com.hapticlab.ui.components.LevelBanner
-import com.hapticlab.ui.components.StopButton
-import com.hapticlab.ui.graph
+import com.tepmex.hapticlab.core.signal.SignalRequestException
+import com.tepmex.hapticlab.core.signal.WaveformSpec
+import com.tepmex.hapticlab.core.signal.buildPulseTrain
+import com.tepmex.hapticlab.ui.components.ChoiceRow
+import com.tepmex.hapticlab.ui.components.CommandDiagram
+import com.tepmex.hapticlab.ui.components.IntSlider
+import com.tepmex.hapticlab.ui.components.KeepScreenOn
+import com.tepmex.hapticlab.ui.components.LevelBanner
+import com.tepmex.hapticlab.ui.components.StopButton
+import com.tepmex.hapticlab.ui.graph
 
 private val presets = listOf(
     "20/20" to (20 to 20),
@@ -80,7 +80,7 @@ fun GeneratorScreen(onBack: () -> Unit) {
             LevelBanner()
             Text(message)
             ChoiceRow(
-                options = listOf("OneShot", "Waveform", "Эффект", "Примитив", "Конверт", "Частота", "Builder"),
+                options = listOf("OneShot", "Waveform", "Эффект", "Примитив", "Конверт", "Частота"),
                 selected = mode,
                 onSelect = { mode = it },
             )
@@ -154,7 +154,7 @@ private fun play(
     effectName: String,
     primitiveName: String,
     waveform: WaveformSpec?,
-    graph: com.hapticlab.ui.AppGraph,
+    graph: com.tepmex.hapticlab.ui.AppGraph,
 ): String {
     graph.refreshInventory()
     val inventory = graph.inventory
@@ -174,7 +174,6 @@ private fun play(
         }
         "Конверт" -> graph.engine.playBasicEnvelope(onMs.toLong(), offMs.toLong(), pulses * repetitions, amplitude, inventory)
         "Частота" -> graph.engine.playWaveformEnvelope(onMs.toLong(), offMs.toLong(), amplitude, inventory)
-        "Builder" -> graph.engine.playBuilder(onMs.toLong(), offMs.toLong(), amplitude, inventory)
         else -> return "Неизвестный режим"
     }
     return result.message

@@ -1,4 +1,4 @@
-package com.hapticlab.haptics
+package com.tepmex.hapticlab.haptics
 
 import android.content.Context
 import android.os.Build
@@ -9,16 +9,15 @@ import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import com.hapticlab.core.haptics.freeDecayTo10PercentMillis
-import com.hapticlab.core.log.DeviceSnapshot
-import com.hapticlab.core.signal.WaveformSpec
-import com.hapticlab.core.signal.buildDiscriminationWaveform
+import com.tepmex.hapticlab.core.haptics.freeDecayTo10PercentMillis
+import com.tepmex.hapticlab.core.log.DeviceSnapshot
+import com.tepmex.hapticlab.core.signal.WaveformSpec
+import com.tepmex.hapticlab.core.signal.buildDiscriminationWaveform
 
 private const val API_MANAGER = 31
 private const val API_ATTRIBUTES = 33
 private const val API_Q_FACTOR = 34
 private const val API_ENVELOPE = 36
-private const val API_BUILDER = 3_700_002
 
 data class DiagnosticRow(val title: String, val value: String, val detail: String? = null)
 
@@ -35,7 +34,6 @@ data class HapticInventory(
     val waveformFrequencyHz: Float?,
     val minEnvelopeStepMs: Long,
     val maxEnvelopePoints: Int,
-    val builderSupported: Boolean,
 )
 
 data class PlayResult(
@@ -75,7 +73,7 @@ class HapticsEngine(context: Context) {
                         "Дальнейшие команды вибрации не запускаются, пока опрос не завершится без ошибки.",
                     ),
                 ),
-                snapshot = com.hapticlab.core.log.DeviceSnapshot(
+                snapshot = com.tepmex.hapticlab.core.log.DeviceSnapshot(
                     manufacturer = Build.MANUFACTURER.orEmpty(),
                     model = Build.MODEL.orEmpty(),
                     androidRelease = Build.VERSION.RELEASE.orEmpty(),
@@ -97,7 +95,6 @@ class HapticsEngine(context: Context) {
                 waveformFrequencyHz = null,
                 minEnvelopeStepMs = 1L,
                 maxEnvelopePoints = 16,
-                builderSupported = false,
             )
         }
     }
@@ -120,7 +117,6 @@ class HapticsEngine(context: Context) {
         val full = sdkIntFullOrNull()
         val effects = readEffects(vibrator)
         val primitives = readPrimitives(vibrator)
-        val builder = full != null && full >= API_BUILDER && envelope == true
         val rows = buildList {
             add(DiagnosticRow("Производитель", Build.MANUFACTURER.orEmpty()))
             add(DiagnosticRow("Модель", Build.MODEL.orEmpty()))
@@ -141,12 +137,13 @@ class HapticsEngine(context: Context) {
             add(DiagnosticRow("Конверты API 36", triState(envelope)))
             add(DiagnosticRow("Профиль частот", profileNote))
             add(DiagnosticRow("Ограничения конверта", envelopeInfo.second))
-            add(DiagnosticRow("VibrationEffect.Builder API 37.2", yesNo(builder)))
-            if (full != null && full >= API_BUILDER && vibrator != null) {
-                add(DiagnosticRow("Пресеты API 37.2", readPresets(vibrator)))
-            } else {
-                add(DiagnosticRow("Пресеты API 37.2", "Недоступны на этой версии Android"))
-            }
+            add(
+                DiagnosticRow(
+                    "VibrationEffect.Builder и пресеты",
+                    "Не входят в эту сборку",
+                    "Вызовов API 37.2 нет в compileSdk 36, поэтому приложение их не опрашивает и не запускает.",
+                ),
+            )
             effects.forEach { effect ->
                 add(DiagnosticRow("Эффект ${effect.name}", effect.support))
             }
@@ -187,7 +184,6 @@ class HapticsEngine(context: Context) {
             waveformFrequencyHz = readWaveformFrequency(vibrator),
             minEnvelopeStepMs = envelopeInfo.first,
             maxEnvelopePoints = envelopeInfo.third,
-            builderSupported = builder,
         )
     }
 
@@ -316,32 +312,6 @@ class HapticsEngine(context: Context) {
             return rejected("Частотный конверт отклонён: ${error.message}")
         }
         return dispatch(effect, step + onMs + step, "WaveformEnvelopeBuilder, $frequency Гц. Без автоматической подмены, если частоты нет в профиле.")
-    }
-
-    fun playBuilder(onMs: Long, gapMs: Long, amplitude: Int, inventory: HapticInventory): PlayResult {
-        if (sdkIntFullOrNull()?.let { it >= API_BUILDER } != true) {
-            return rejected("VibrationEffect.Builder доступен с API 37.2")
-        }
-        if (!inventory.envelopeSupported) return rejected("Для этого режима нужен поддерживаемый конверт")
-        val step = inventory.minEnvelopeStepMs.coerceAtLeast(1L)
-        val safeOn = onMs.coerceAtLeast(step)
-        if (onMs < step) return rejected("Минимальная длительность контрольной точки: $step мс")
-        val intensity = (amplitude.coerceIn(1, 255) / 255f).coerceIn(0.05f, 1f)
-        val envelope = VibrationEffect.Envelope.create(
-            VibrationEffect.BasicEnvelopeBuilder()
-                .setInitialSharpness(0.6f)
-                .addControlPoint(intensity, 0.6f, safeOn)
-                .addControlPoint(0f, 0.6f, step),
-        )
-        val effect = try {
-            VibrationEffect.Builder()
-                .addPreset(0L, VibrationEffect.Preset.create(VibrationEffect.Preset.PRESET_CLICK, intensity))
-                .addEnvelope(gapMs.coerceAtLeast(0L), envelope)
-                .build()
-        } catch (error: RuntimeException) {
-            return rejected("Builder отклонён: ${error.message}")
-        }
-        return dispatch(effect, gapMs + safeOn + step, "Builder: пресет и конверт. Время — запрошенная шкала, не отклик мотора.")
     }
 
     fun playDiscrimination(
@@ -531,31 +501,6 @@ class HapticsEngine(context: Context) {
             vibrator.getPrimitiveDurations(primitiveId).firstOrNull()?.toLong() ?: 0L
         } catch (error: RuntimeException) {
             0L
-        }
-    }
-
-    private fun readPresets(vibrator: Vibrator): String {
-        val presets = listOf(
-            "CLICK" to VibrationEffect.Preset.PRESET_CLICK,
-            "TICK" to VibrationEffect.Preset.PRESET_TICK,
-            "LOW_TICK" to VibrationEffect.Preset.PRESET_LOW_TICK,
-        )
-        return presets.joinToString("; ") { (name, id) ->
-            val supported = try {
-                vibrator.isPresetSupported(id)
-            } catch (error: RuntimeException) {
-                return@joinToString "$name: ошибка"
-            }
-            if (!supported) {
-                "$name: нет"
-            } else {
-                val duration = try {
-                    vibrator.getPresetDuration(id).toMillis()
-                } catch (error: RuntimeException) {
-                    -1L
-                }
-                "$name: да, оценка $duration мс"
-            }
         }
     }
 

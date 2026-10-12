@@ -1,4 +1,4 @@
-package com.hapticlab.ui.experiment
+package com.tepmex.hapticlab.ui.experiment
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
@@ -24,28 +24,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hapticlab.core.export.percentText
-import com.hapticlab.core.log.ExperimentSession
-import com.hapticlab.core.log.LogEvent
-import com.hapticlab.core.log.SessionRecorder
-import com.hapticlab.core.psych.AdaptiveStaircase
-import com.hapticlab.core.psych.STANDARD_GAPS_MS
-import com.hapticlab.core.psych.TrialAnswer
-import com.hapticlab.core.psych.TrialSpec
-import com.hapticlab.core.psych.buildConstantStimuliSchedule
-import com.hapticlab.core.psych.shouldInsertControl
-import com.hapticlab.core.psych.summarize
-import com.hapticlab.core.psych.summaryFields
-import com.hapticlab.haptics.DiscriminationKind
-import com.hapticlab.ui.AppGraph
-import com.hapticlab.ui.activityContext
-import com.hapticlab.ui.components.ChoiceRow
-import com.hapticlab.ui.components.IntSlider
-import com.hapticlab.ui.components.KeepScreenOn
-import com.hapticlab.ui.components.LevelBanner
-import com.hapticlab.ui.components.StopButton
-import com.hapticlab.ui.graph
-import com.hapticlab.ui.labViewModel
+import com.tepmex.hapticlab.core.export.percentText
+import com.tepmex.hapticlab.core.log.ExperimentSession
+import com.tepmex.hapticlab.core.log.LogEvent
+import com.tepmex.hapticlab.core.log.SessionRecorder
+import com.tepmex.hapticlab.core.psych.AdaptiveStaircase
+import com.tepmex.hapticlab.core.psych.STANDARD_GAPS_MS
+import com.tepmex.hapticlab.core.psych.TrialAnswer
+import com.tepmex.hapticlab.core.psych.TrialSpec
+import com.tepmex.hapticlab.core.psych.buildConstantStimuliSchedule
+import com.tepmex.hapticlab.core.psych.shouldInsertControl
+import com.tepmex.hapticlab.core.psych.summarize
+import com.tepmex.hapticlab.core.psych.summaryFields
+import com.tepmex.hapticlab.haptics.DiscriminationKind
+import com.tepmex.hapticlab.ui.AppGraph
+import com.tepmex.hapticlab.ui.activityContext
+import com.tepmex.hapticlab.ui.components.ChoiceRow
+import com.tepmex.hapticlab.ui.components.IntSlider
+import com.tepmex.hapticlab.ui.components.KeepScreenOn
+import com.tepmex.hapticlab.ui.components.LevelBanner
+import com.tepmex.hapticlab.ui.components.StopButton
+import com.tepmex.hapticlab.ui.graph
+import com.tepmex.hapticlab.ui.labViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -304,11 +304,11 @@ fun ExperimentScreen(onBack: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = {
                             val file = graph.sessions.export(record).first
-                            com.hapticlab.data.shareFile(context, file, "text/csv")
+                            com.tepmex.hapticlab.data.shareFile(context, file, "text/csv")
                         }) { Text("CSV") }
                         Button(onClick = {
                             val file = graph.sessions.export(record).second
-                            com.hapticlab.data.shareFile(context, file, "application/json")
+                            com.tepmex.hapticlab.data.shareFile(context, file, "application/json")
                         }) { Text("JSON") }
                     }
                 }

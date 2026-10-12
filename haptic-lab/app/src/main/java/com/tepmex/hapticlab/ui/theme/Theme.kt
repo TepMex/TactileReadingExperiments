@@ -1,4 +1,4 @@
-package com.hapticlab.ui.theme
+package com.tepmex.hapticlab.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

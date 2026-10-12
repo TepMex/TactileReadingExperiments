@@ -1,4 +1,4 @@
-package com.hapticlab.ui.alphabet
+package com.tepmex.hapticlab.ui.alphabet
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
@@ -27,26 +27,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import com.hapticlab.core.alphabet.Glyph
-import com.hapticlab.core.alphabet.TactileAlphabet
-import com.hapticlab.core.alphabet.demoAlphabet
-import com.hapticlab.core.alphabet.renderText
-import com.hapticlab.core.alphabet.resizeAlphabet
-import com.hapticlab.core.log.SessionRecorder
-import com.hapticlab.core.spatial.calibratedMmPerPx
-import com.hapticlab.haptics.FingerFrame
-import com.hapticlab.haptics.FingerSession
-import com.hapticlab.haptics.LocatedSample
-import com.hapticlab.ui.AppGraph
-import com.hapticlab.ui.components.FingerTrack
-import com.hapticlab.ui.components.FloatSlider
-import com.hapticlab.ui.components.IntSlider
-import com.hapticlab.ui.components.KeepScreenOn
-import com.hapticlab.ui.components.LevelBanner
-import com.hapticlab.ui.components.Metric
-import com.hapticlab.ui.components.StopButton
-import com.hapticlab.ui.graph
-import com.hapticlab.ui.labViewModel
+import com.tepmex.hapticlab.core.alphabet.Glyph
+import com.tepmex.hapticlab.core.alphabet.TactileAlphabet
+import com.tepmex.hapticlab.core.alphabet.demoAlphabet
+import com.tepmex.hapticlab.core.alphabet.renderText
+import com.tepmex.hapticlab.core.alphabet.resizeAlphabet
+import com.tepmex.hapticlab.core.log.SessionRecorder
+import com.tepmex.hapticlab.core.spatial.calibratedMmPerPx
+import com.tepmex.hapticlab.haptics.FingerFrame
+import com.tepmex.hapticlab.haptics.FingerSession
+import com.tepmex.hapticlab.haptics.LocatedSample
+import com.tepmex.hapticlab.ui.AppGraph
+import com.tepmex.hapticlab.ui.components.FingerTrack
+import com.tepmex.hapticlab.ui.components.FloatSlider
+import com.tepmex.hapticlab.ui.components.IntSlider
+import com.tepmex.hapticlab.ui.components.KeepScreenOn
+import com.tepmex.hapticlab.ui.components.LevelBanner
+import com.tepmex.hapticlab.ui.components.Metric
+import com.tepmex.hapticlab.ui.components.StopButton
+import com.tepmex.hapticlab.ui.graph
+import com.tepmex.hapticlab.ui.labViewModel
 import kotlinx.coroutines.delay
 
 class AlphabetViewModel(private val graph: AppGraph) : ViewModel() {

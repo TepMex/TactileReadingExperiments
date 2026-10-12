@@ -1,4 +1,4 @@
-package com.hapticlab.core.psych
+package com.tepmex.hapticlab.core.psych
 
 import kotlin.math.sqrt
 import kotlin.random.Random

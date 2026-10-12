@@ -1,4 +1,4 @@
-package com.hapticlab.core.time
+package com.tepmex.hapticlab.core.time
 
 /**
  * Переносит метку MotionEvent из шкалы uptimeMillis в elapsedRealtimeNanos.

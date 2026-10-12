@@ -1,4 +1,4 @@
-package com.hapticlab.core.signal
+package com.tepmex.hapticlab.core.signal
 
 data class WaveformSpec(
     val timingsMs: List<Long>,

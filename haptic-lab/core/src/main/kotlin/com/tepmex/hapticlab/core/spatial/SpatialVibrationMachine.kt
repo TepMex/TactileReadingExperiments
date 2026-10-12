@@ -1,4 +1,4 @@
-package com.hapticlab.core.spatial
+package com.tepmex.hapticlab.core.spatial
 
 /**
  * Команда уровня А: приложение просит включить или выключить вибрацию.

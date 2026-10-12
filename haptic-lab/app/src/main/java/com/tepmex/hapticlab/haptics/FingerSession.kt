@@ -1,16 +1,16 @@
-package com.hapticlab.haptics
+package com.tepmex.hapticlab.haptics
 
 import android.os.SystemClock
-import com.hapticlab.core.log.LogEvent
-import com.hapticlab.core.log.SessionRecorder
-import com.hapticlab.core.metrics.BoundaryCounter
-import com.hapticlab.core.metrics.SpeedTracker
-import com.hapticlab.core.spatial.HapticCommand
-import com.hapticlab.core.spatial.SpatialVibrationMachine
-import com.hapticlab.core.spatial.ZoneSample
-import com.hapticlab.core.spatial.isStateTransition
-import com.hapticlab.core.spatial.penetrationForTransition
-import com.hapticlab.core.spatial.zoneIndexAt
+import com.tepmex.hapticlab.core.log.LogEvent
+import com.tepmex.hapticlab.core.log.SessionRecorder
+import com.tepmex.hapticlab.core.metrics.BoundaryCounter
+import com.tepmex.hapticlab.core.metrics.SpeedTracker
+import com.tepmex.hapticlab.core.spatial.HapticCommand
+import com.tepmex.hapticlab.core.spatial.SpatialVibrationMachine
+import com.tepmex.hapticlab.core.spatial.ZoneSample
+import com.tepmex.hapticlab.core.spatial.isStateTransition
+import com.tepmex.hapticlab.core.spatial.penetrationForTransition
+import com.tepmex.hapticlab.core.spatial.zoneIndexAt
 
 data class LocatedSample(
     val timeMs: Long,

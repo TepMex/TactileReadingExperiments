@@ -1,13 +1,13 @@
-package com.hapticlab.data
+package com.tepmex.hapticlab.data
 
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
-import com.hapticlab.core.alphabet.TactileAlphabet
-import com.hapticlab.core.alphabet.demoAlphabet
-import com.hapticlab.core.export.sessionToCsv
-import com.hapticlab.core.export.sessionToJson
-import com.hapticlab.core.log.ExperimentSession
+import com.tepmex.hapticlab.core.alphabet.TactileAlphabet
+import com.tepmex.hapticlab.core.alphabet.demoAlphabet
+import com.tepmex.hapticlab.core.export.sessionToCsv
+import com.tepmex.hapticlab.core.export.sessionToJson
+import com.tepmex.hapticlab.core.log.ExperimentSession
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File

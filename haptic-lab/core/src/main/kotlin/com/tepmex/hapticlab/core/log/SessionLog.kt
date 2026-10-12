@@ -1,4 +1,4 @@
-package com.hapticlab.core.log
+package com.tepmex.hapticlab.core.log
 
 import kotlinx.serialization.Serializable
 

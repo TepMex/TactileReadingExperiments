@@ -1,6 +1,6 @@
-package com.hapticlab.core.export
+package com.tepmex.hapticlab.core.export
 
-import com.hapticlab.core.log.ExperimentSession
+import com.tepmex.hapticlab.core.log.ExperimentSession
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

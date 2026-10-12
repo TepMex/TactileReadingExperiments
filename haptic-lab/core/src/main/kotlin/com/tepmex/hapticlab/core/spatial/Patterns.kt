@@ -1,4 +1,4 @@
-package com.hapticlab.core.spatial
+package com.tepmex.hapticlab.core.spatial
 
 enum class PatternPreset(val title: String) {
     THREE_PULSES("Три участка"),

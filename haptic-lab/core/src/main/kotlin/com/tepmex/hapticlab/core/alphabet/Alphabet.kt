@@ -1,4 +1,4 @@
-package com.hapticlab.core.alphabet
+package com.tepmex.hapticlab.core.alphabet
 
 import kotlinx.serialization.Serializable
 
