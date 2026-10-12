@@ -1,0 +1,244 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      full_deploy:
+        description: Build and deploy all projects (skip change detection)
+        type: boolean
+        default: false
+
+# Serialize publishes so two selective deploys cannot overwrite each other.
+# In-progress runs are not cancelled: a newer push must not drop an app that
+# only the in-flight commit changed.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      has_previous: ${{ steps.plan.outputs.has_previous }}
+      full_deploy: ${{ steps.plan.outputs.full_deploy }}
+      should_deploy: ${{ steps.plan.outputs.should_deploy }}
+      refresh_android_landings: ${{ steps.plan.outputs.refresh_android_landings }}
+      deployed_at: ${{ steps.plan.outputs.deployed_at }}
+      web_count: ${{ steps.plan.outputs.web_count }}
+      android_count: ${{ steps.plan.outputs.android_count }}
+      web_matrix: ${{ steps.plan.outputs.web_matrix }}
+      android_matrix: ${{ steps.plan.outputs.android_matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Fetch diff base
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: git fetch --no-tags --depth=1 origin ${{ github.event.before }}
+
+      - name: Fetch previous gh-pages site
+        id: previous
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: previous-site
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute deploy plan
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DIFF_BASE: ${{ github.event.before }}
+          DIFF_HEAD: ${{ github.sha }}
+          FULL_DEPLOY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.full_deploy }}
+          PREVIOUS_SITE: previous-site
+        run: scripts/ci-deploy-plan.sh
+
+  build-web:
+    needs: detect
+    if: needs.detect.outputs.web_count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.web_matrix) }}
+    name: web / ${{ matrix.app.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Bun
+        if: matrix.app.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node
+        if: matrix.app.runtime == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app.name }}/package-lock.json
+
+      - name: Build
+        env:
+          DEPLOYED_AT: ${{ needs.detect.outputs.deployed_at }}
+        run: scripts/ci-build-web.sh "${{ matrix.app.name }}"
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ matrix.app.name }}
+          path: ${{ matrix.app.name }}/dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  build-android:
+    needs: detect
+    if: needs.detect.outputs.android_count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.android_matrix) }}
+    name: apk / ${{ matrix.app.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Bun
+        if: matrix.app.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node
+        if: matrix.app.runtime == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app.name }}/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          # Google removed the obsolete `tools` package; v3 still requests it by default
+          # and fails with "Failed to find package 'tools'".
+          packages: platform-tools
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release APK
+        env:
+          DEPLOYED_AT: ${{ needs.detect.outputs.deployed_at }}
+        run: scripts/ci-build-android.sh "${{ matrix.app.name }}"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ matrix.app.name }}
+          path: ${{ matrix.app.name }}/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: [detect, build-web, build-android]
+    if: >-
+      always() &&
+      needs.detect.result == 'success' &&
+      needs.detect.outputs.should_deploy == 'true' &&
+      (needs.build-web.result == 'success' || needs.build-web.result == 'skipped') &&
+      (needs.build-android.result == 'success' || needs.build-android.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Fetch previous gh-pages site
+        if: needs.detect.outputs.has_previous == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: previous-site
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download web artifacts
+        if: needs.detect.outputs.web_count != '0'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: web-*
+          path: artifacts
+          merge-multiple: false
+
+      - name: Download APK artifacts
+        if: needs.detect.outputs.android_count != '0'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-*
+          path: artifacts
+          merge-multiple: false
+
+      - name: Prepare GitHub Pages site
+        env:
+          HAS_PREVIOUS: ${{ needs.detect.outputs.has_previous }}
+          REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
+          WEB_MATRIX: ${{ needs.detect.outputs.web_matrix }}
+          ANDROID_MATRIX: ${{ needs.detect.outputs.android_matrix }}
+        run: scripts/ci-assemble-site.sh
+
+      - name: Setup Bun
+        if: needs.detect.outputs.android_count != '0' || needs.detect.outputs.refresh_android_landings == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Inject deploy footers (static landing pages)
+        if: needs.detect.outputs.android_count != '0' || needs.detect.outputs.refresh_android_landings == 'true'
+        env:
+          DEPLOYED_AT: ${{ needs.detect.outputs.deployed_at }}
+          REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
+          ANDROID_MATRIX: ${{ needs.detect.outputs.android_matrix }}
+        run: scripts/ci-inject-android-footers.sh
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          publish_branch: gh-pages
