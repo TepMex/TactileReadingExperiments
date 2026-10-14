@@ -18,12 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tepmex.vibealphabet.core.MAX_WINDOW_MS
 import com.tepmex.vibealphabet.core.MIN_WINDOW_MS
-import com.tepmex.vibealphabet.core.STRONG_AMPLITUDE
-import com.tepmex.vibealphabet.core.Shape
 import com.tepmex.vibealphabet.core.SignalId
-import com.tepmex.vibealphabet.core.WEAK_AMPLITUDE
 import com.tepmex.vibealphabet.core.allowedWindowMillis
-import com.tepmex.vibealphabet.core.shapeTitle
+import com.tepmex.vibealphabet.core.formatSegments
 import com.tepmex.vibealphabet.core.waveformFor
 import com.tepmex.vibealphabet.ui.LocalGraph
 import kotlin.math.abs
@@ -68,25 +65,31 @@ fun SettingsScreen() {
             }
         }
         Text(
-            "Окно — длина команды, включая тишину. Короткий удар, протяжённая вибрация и двойной удар делят одно окно. Участки масштабируются от эталона 100 мс. Команда не равна ощущению: мотору нужно время разогнаться и остановиться.",
+            "Окно — длина команды, включая тишину. Шесть рисунков делят одно окно и масштабируются от эталона 100 мс. Включённый участок всегда на полной силе, выключенный — тишина. Сигналы различаются только временем, поэтому они остаются разными и без управления амплитудой. Команда не равна ощущению: мотору нужно время разогнаться и остановиться.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text("Команда при $window мс", style = MaterialTheme.typography.titleMedium)
-        Shape.entries.forEach { shape ->
-            val sample = SignalId.entries.first { it.shape == shape }
-            val timings = waveformFor(sample, window).timingsMs.joinToString(" + ") { "$it" }
+        SignalId.entries.forEach { signal ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    "${signal.title}. ${signal.patternName} — ${signal.sensation}",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    formatSegments(waveformFor(signal, window)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (!graph.player.hasVibrator) {
             Text(
-                "${shapeTitle(shape)}: $timings мс",
-                style = MaterialTheme.typography.bodyLarge,
+                "Вибромотор не найден.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
             )
         }
-        Text(
-            "Слабая сила $WEAK_AMPLITUDE, сильная $STRONG_AMPLITUDE. Тишина — амплитуда 0. Это стартовые значения, не подтверждённый алфавит.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        AmplitudeNote()
     }
 }
 
@@ -106,18 +109,3 @@ private fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun AmplitudeNote() {
-    val player = LocalGraph.current.player
-    val text = when {
-        !player.hasVibrator -> "Вибромотор не найден."
-        player.hasAmplitudeControl -> "Управление амплитудой есть: слабый и сильный различаются силой."
-        else -> "Управления амплитудой нет. Ненулевые участки станут максимальными, и шесть сигналов сожмутся до трёх."
-    }
-    val color = if (player.hasVibrator && player.hasAmplitudeControl) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.error
-    }
-    Text(text, style = MaterialTheme.typography.bodyMedium, color = color)
-}

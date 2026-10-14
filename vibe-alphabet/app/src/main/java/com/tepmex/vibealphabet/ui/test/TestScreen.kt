@@ -185,13 +185,13 @@ private fun Verdict(result: TestPhase.Result) {
         modifier = Modifier.fillMaxWidth(),
     )
     Text(
-        "Это был сигнал «${result.signal.title}».",
+        "Это был сигнал «${result.signal.title}»: ${result.signal.patternName}. ${result.signal.sensation}.",
         style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier.fillMaxWidth(),
     )
     if (!result.correct) {
         Text(
-            "Вы выбрали «${result.choice.title}».",
+            "Вы выбрали «${result.choice.title}»: ${result.choice.patternName}.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth(),
