@@ -79,3 +79,17 @@ fun buildDiscriminationWaveform(
         truncated = false,
     )
 }
+
+/** Три импульса по 40 мс с паузами 40 мс: слышно и длительность, и промежуток. */
+fun timedPulseProbe(): WaveformSpec = buildPulseTrain(onMs = 40, offMs = 40, pulses = 3, amplitude = 200, repetitions = 1)
+
+/**
+ * Слабый импульс, пауза, сильный импульс.
+ * Без управления амплитудой оба ненулевых уровня становятся одинаковым «включено».
+ */
+fun amplitudeContrastProbe(): WaveformSpec = WaveformSpec(
+    timingsMs = listOf(80L, 160L, 80L),
+    amplitudes = listOf(48, 0, 220),
+    totalMs = 320L,
+    truncated = false,
+)
