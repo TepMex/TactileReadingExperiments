@@ -79,9 +79,8 @@ class AlphabetTest {
     }
 
     @Test
-    fun titlesAreUnique() {
-        assertEquals(6, SignalId.entries.map { it.title }.toSet().size)
-        assertTrue(SignalId.entries.all { it.title.isNotBlank() })
+    fun titlesAreNumbersOneThroughSix() {
+        assertEquals(listOf("1", "2", "3", "4", "5", "6"), SignalId.entries.map { it.title })
     }
 
     private fun expect(

@@ -16,12 +16,12 @@ enum class SignalId(
     val shape: Shape,
     val strength: Strength,
 ) {
-    WEAK_TAP("Слабый короткий удар", Shape.TAP, Strength.WEAK),
-    STRONG_TAP("Сильный короткий удар", Shape.TAP, Strength.STRONG),
-    WEAK_SUSTAINED("Слабая протяжённая вибрация", Shape.SUSTAINED, Strength.WEAK),
-    STRONG_SUSTAINED("Сильная протяжённая вибрация", Shape.SUSTAINED, Strength.STRONG),
-    WEAK_DOUBLE("Два слабых удара", Shape.DOUBLE, Strength.WEAK),
-    STRONG_DOUBLE("Два сильных удара", Shape.DOUBLE, Strength.STRONG),
+    WEAK_TAP("1", Shape.TAP, Strength.WEAK),
+    STRONG_TAP("2", Shape.TAP, Strength.STRONG),
+    WEAK_SUSTAINED("3", Shape.SUSTAINED, Strength.WEAK),
+    STRONG_SUSTAINED("4", Shape.SUSTAINED, Strength.STRONG),
+    WEAK_DOUBLE("5", Shape.DOUBLE, Strength.WEAK),
+    STRONG_DOUBLE("6", Shape.DOUBLE, Strength.STRONG),
 }
 
 const val REFERENCE_WINDOW_MS = 100
