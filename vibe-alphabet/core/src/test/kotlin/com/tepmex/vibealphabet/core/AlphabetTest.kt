@@ -8,10 +8,10 @@ class AlphabetTest {
     @Test
     fun referenceWindowMatchesTheTimingAlphabet() {
         expect(SignalId.SHORT, 100, listOf(20L, 80L))
+        expect(SignalId.DOUBLE, 100, listOf(20L, 50L, 20L, 10L))
+        expect(SignalId.TRIPLE, 100, listOf(20L, 18L, 20L, 18L, 20L, 4L))
         expect(SignalId.MEDIUM, 100, listOf(50L, 50L))
         expect(SignalId.LONG, 100, listOf(90L, 10L))
-        expect(SignalId.DOUBLE, 100, listOf(20L, 50L, 20L, 10L))
-        expect(SignalId.SHORT_LONG, 100, listOf(20L, 20L, 50L, 10L))
         expect(SignalId.LONG_SHORT, 100, listOf(50L, 20L, 20L, 10L))
     }
 
@@ -21,10 +21,10 @@ class AlphabetTest {
         assertEquals(
             listOf(
                 "Короткий" to "Тычок",
+                "Двойной" to "Два тычка",
+                "Тройной" to "Три тычка",
                 "Средний" to "Короткое гудение",
                 "Длинный" to "Протяжённое гудение",
-                "Двойной" to "Два тычка",
-                "Короткий–длинный" to "Тычок, затем гудение",
                 "Длинный–короткий" to "Гудение, затем тычок",
             ),
             SignalId.entries.map { it.patternName to it.sensation },
@@ -59,10 +59,11 @@ class AlphabetTest {
     fun halfAndFiveTimesTheReferenceStayOnThePattern() {
         expect(SignalId.SHORT, 50, listOf(10L, 40L))
         expect(SignalId.DOUBLE, 50, listOf(10L, 25L, 10L, 5L))
+        expect(SignalId.TRIPLE, 50, listOf(10L, 9L, 10L, 9L, 10L, 2L))
         expect(SignalId.LONG, 500, listOf(450L, 50L))
         expect(SignalId.MEDIUM, 250, listOf(125L, 125L))
-        expect(SignalId.SHORT_LONG, 200, listOf(40L, 40L, 100L, 20L))
         expect(SignalId.LONG_SHORT, 150, listOf(75L, 30L, 30L, 15L))
+        expect(SignalId.TRIPLE, 200, listOf(40L, 36L, 40L, 36L, 40L, 8L))
     }
 
     @Test
@@ -88,8 +89,8 @@ class AlphabetTest {
             formatSegments(waveformFor(SignalId.SHORT, 100)),
         )
         assertEquals(
-            "20 мс включён, 20 мс выключен, 50 мс включён, 10 мс выключен",
-            formatSegments(waveformFor(SignalId.SHORT_LONG, 100)),
+            "20 мс включён, 18 мс выключен, 20 мс включён, 18 мс выключен, 20 мс включён, 4 мс выключен",
+            formatSegments(waveformFor(SignalId.TRIPLE, 100)),
         )
     }
 
