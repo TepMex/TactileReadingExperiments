@@ -23,6 +23,7 @@ import com.tepmex.hapticlab.ui.components.LevelBanner
 fun HomeScreen(onOpen: (String) -> Unit) {
     val sections = listOf(
         Routes.Diagnostics to "Диагностика",
+        Routes.Capabilities to "Проверка эффектов",
         Routes.Generator to "Генератор",
         Routes.Spatial to "Пространственные рисунки",
         Routes.Speed to "Скоростной тест",

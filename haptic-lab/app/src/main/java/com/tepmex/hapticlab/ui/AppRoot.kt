@@ -25,6 +25,7 @@ import com.tepmex.hapticlab.data.SessionStore
 import com.tepmex.hapticlab.haptics.HapticInventory
 import com.tepmex.hapticlab.haptics.HapticsEngine
 import com.tepmex.hapticlab.ui.alphabet.AlphabetScreen
+import com.tepmex.hapticlab.ui.capabilities.CapabilityScreen
 import com.tepmex.hapticlab.ui.diagnostics.DiagnosticsScreen
 import com.tepmex.hapticlab.ui.experiment.ExperimentScreen
 import com.tepmex.hapticlab.ui.generator.GeneratorScreen
@@ -67,6 +68,7 @@ val LocalGraph = staticCompositionLocalOf<AppGraph> { error("Граф прило
 object Routes {
     const val Home = "home"
     const val Diagnostics = "diagnostics"
+    const val Capabilities = "capabilities"
     const val Generator = "generator"
     const val Spatial = "spatial"
     const val Speed = "speed"
@@ -82,6 +84,7 @@ fun HapticLabApp(graph: AppGraph) {
         NavHost(navController = nav, startDestination = Routes.Home) {
             composable(Routes.Home) { HomeScreen(onOpen = nav::navigate) }
             composable(Routes.Diagnostics) { DiagnosticsScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.Capabilities) { CapabilityScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.Generator) { GeneratorScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.Spatial) { SpatialScreen(onBack = { nav.popBackStack() }) }
             composable(Routes.Speed) { SpeedScreen(onBack = { nav.popBackStack() }) }

@@ -138,7 +138,8 @@ fun CommandDiagram(spec: WaveformSpec?) {
             waveform.timingsMs.forEachIndexed { index, timing ->
                 val width = size.width * (timing / total)
                 val amplitude = waveform.amplitudes[index]
-                val barHeight = if (amplitude == 0) 6f else size.height * 0.72f
+                val level = if (amplitude <= 0) 0f else amplitude.coerceIn(1, 255) / 255f
+                val barHeight = if (amplitude == 0) 6f else size.height * (0.18f + 0.62f * level)
                 drawRect(
                     color = if (amplitude == 0) Color(0xFF6E7468) else OnColor,
                     topLeft = Offset(x, size.height - barHeight),

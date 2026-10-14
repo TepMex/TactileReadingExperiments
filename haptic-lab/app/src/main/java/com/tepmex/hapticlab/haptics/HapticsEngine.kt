@@ -9,6 +9,12 @@ import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import com.tepmex.hapticlab.core.haptics.CapabilityFacts
+import com.tepmex.hapticlab.core.haptics.CapabilityProbe
+import com.tepmex.hapticlab.core.haptics.EffectReading
+import com.tepmex.hapticlab.core.haptics.PrimitiveReading
+import com.tepmex.hapticlab.core.haptics.ProbeOutcome
+import com.tepmex.hapticlab.core.haptics.capabilityReport
 import com.tepmex.hapticlab.core.haptics.freeDecayTo10PercentMillis
 import com.tepmex.hapticlab.core.log.DeviceSnapshot
 import com.tepmex.hapticlab.core.signal.WaveformSpec
@@ -21,7 +27,14 @@ private const val API_ENVELOPE = 36
 
 data class DiagnosticRow(val title: String, val value: String, val detail: String? = null)
 
-data class NamedEffect(val name: String, val id: Int, val support: String)
+data class NamedEffect(
+    val name: String,
+    val id: Int,
+    val support: String,
+    val outcome: ProbeOutcome = ProbeOutcome.UNKNOWN,
+    val reading: String = support,
+    val durationMs: Int? = null,
+)
 
 data class HapticInventory(
     val rows: List<DiagnosticRow>,
@@ -34,6 +47,7 @@ data class HapticInventory(
     val waveformFrequencyHz: Float?,
     val minEnvelopeStepMs: Long,
     val maxEnvelopePoints: Int,
+    val capabilityReport: List<CapabilityProbe> = emptyList(),
 )
 
 data class PlayResult(
@@ -117,6 +131,25 @@ class HapticsEngine(context: Context) {
         val full = sdkIntFullOrNull()
         val effects = readEffects(vibrator)
         val primitives = readPrimitives(vibrator)
+        val report = capabilityReport(
+            CapabilityFacts(
+                sdkInt = Build.VERSION.SDK_INT,
+                hasVibrator = hasVibrator,
+                hasAmplitudeControl = amplitude,
+                effects = effects.map { effect ->
+                    EffectReading(effect.name, effect.outcome, effect.support)
+                },
+                primitives = primitives.map { primitive ->
+                    PrimitiveReading(
+                        name = primitive.name,
+                        outcome = primitive.outcome,
+                        reading = primitive.reading,
+                        durationMs = primitive.durationMs,
+                    )
+                },
+                envelopeSupported = envelope,
+            ),
+        )
         val rows = buildList {
             add(DiagnosticRow("Производитель", Build.MANUFACTURER.orEmpty()))
             add(DiagnosticRow("Модель", Build.MODEL.orEmpty()))
@@ -184,6 +217,7 @@ class HapticsEngine(context: Context) {
             waveformFrequencyHz = readWaveformFrequency(vibrator),
             minEnvelopeStepMs = envelopeInfo.first,
             maxEnvelopePoints = envelopeInfo.third,
+            capabilityReport = report,
         )
     }
 
@@ -220,7 +254,7 @@ class HapticsEngine(context: Context) {
     fun playPredefined(effectId: Int, name: String): PlayResult {
         if (Build.VERSION.SDK_INT < 29) return rejected("createPredefined доступен с API 29")
         val vibrator = requireVibrator() ?: return rejected("Вибромотор недоступен")
-        val support = effectSupport(vibrator, effectId)
+        val support = effectSupport(vibrator, effectId).text
         val effect = try {
             VibrationEffect.createPredefined(effectId)
         } catch (error: IllegalArgumentException) {
@@ -449,23 +483,28 @@ class HapticsEngine(context: Context) {
             "HEAVY_CLICK" to VibrationEffect.EFFECT_HEAVY_CLICK,
         )
         if (vibrator == null || Build.VERSION.SDK_INT < 30) {
-            return effects.map { NamedEffect(it.first, it.second, "проверка с API 30") }
+            return effects.map { (name, id) ->
+                namedQuery(name, id, ProbeOutcome.API_UNAVAILABLE, "проверка с API 30")
+            }
         }
-        return effects.map { (name, id) -> NamedEffect(name, id, effectSupport(vibrator, id)) }
+        return effects.map { (name, id) ->
+            val support = effectSupport(vibrator, id)
+            namedQuery(name, id, support.outcome, support.text)
+        }
     }
 
-    private fun effectSupport(vibrator: Vibrator, effectId: Int): String {
-        if (Build.VERSION.SDK_INT < 30) return "проверка с API 30"
+    private fun effectSupport(vibrator: Vibrator, effectId: Int): SupportLabel {
+        if (Build.VERSION.SDK_INT < 30) return SupportLabel(ProbeOutcome.API_UNAVAILABLE, "проверка с API 30")
         val code = try {
             vibrator.areEffectsSupported(effectId).firstOrNull()
         } catch (error: RuntimeException) {
-            return "ошибка: ${error.message}"
+            return SupportLabel(ProbeOutcome.UNKNOWN, "ошибка: ${error.message}")
         }
         return when (code) {
-            Vibrator.VIBRATION_EFFECT_SUPPORT_YES -> "да"
-            Vibrator.VIBRATION_EFFECT_SUPPORT_NO -> "нет, возможен общий запасной шаблон"
-            Vibrator.VIBRATION_EFFECT_SUPPORT_UNKNOWN -> "неизвестно"
-            else -> "нет данных"
+            Vibrator.VIBRATION_EFFECT_SUPPORT_YES -> SupportLabel(ProbeOutcome.SUPPORTED, "да")
+            Vibrator.VIBRATION_EFFECT_SUPPORT_NO -> SupportLabel(ProbeOutcome.UNSUPPORTED, "нет, возможен общий запасной шаблон")
+            Vibrator.VIBRATION_EFFECT_SUPPORT_UNKNOWN -> SupportLabel(ProbeOutcome.UNKNOWN, "неизвестно")
+            else -> SupportLabel(ProbeOutcome.UNKNOWN, "нет данных")
         }
     }
 
@@ -481,17 +520,27 @@ class HapticsEngine(context: Context) {
             "LOW_TICK" to VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
         )
         if (vibrator == null || Build.VERSION.SDK_INT < 30) {
-            return primitives.map { NamedEffect(it.first, it.second, "проверка с API 30") }
+            return primitives.map { (name, id) ->
+                namedQuery(name, id, ProbeOutcome.API_UNAVAILABLE, "проверка с API 30")
+            }
         }
         return primitives.map { (name, id) ->
             val supported = try {
                 vibrator.arePrimitivesSupported(id).firstOrNull() == true
             } catch (error: RuntimeException) {
-                return@map NamedEffect(name, id, "ошибка: ${error.message}")
+                return@map namedQuery(name, id, ProbeOutcome.UNKNOWN, "ошибка: ${error.message}")
             }
-            val duration = if (supported) primitiveDuration(vibrator, id) else 0
-            val label = if (supported) "да, оценка API $duration мс" else "нет"
-            NamedEffect(name, id, label)
+            val durationMs = if (Build.VERSION.SDK_INT >= API_MANAGER) primitiveDuration(vibrator, id).toInt() else null
+            val diagnostic = if (supported) "да, оценка API ${durationMs ?: 0} мс" else "нет"
+            val reading = if (supported) "да" else "нет"
+            NamedEffect(
+                name = name,
+                id = id,
+                support = diagnostic,
+                outcome = if (supported) ProbeOutcome.SUPPORTED else ProbeOutcome.UNSUPPORTED,
+                reading = reading,
+                durationMs = durationMs,
+            )
         }
     }
 
@@ -504,6 +553,14 @@ class HapticsEngine(context: Context) {
         }
     }
 
+    private fun namedQuery(name: String, id: Int, outcome: ProbeOutcome, text: String) = NamedEffect(
+        name = name,
+        id = id,
+        support = text,
+        outcome = outcome,
+        reading = text,
+    )
+
     private fun rejected(message: String) = PlayResult(
         accepted = false,
         message = message,
@@ -513,6 +570,8 @@ class HapticsEngine(context: Context) {
 }
 
 enum class DiscriminationKind { WAVEFORM, PRIMITIVE, ENVELOPE }
+
+private data class SupportLabel(val outcome: ProbeOutcome, val text: String)
 
 private fun sdkIntFullOrNull(): Int? {
     return if (Build.VERSION.SDK_INT >= API_ENVELOPE) Build.VERSION.SDK_INT_FULL else null
