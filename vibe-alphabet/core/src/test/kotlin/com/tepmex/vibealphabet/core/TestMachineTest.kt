@@ -10,41 +10,41 @@ import org.junit.Test
 class TestMachineTest {
     @Test
     fun blankPressReplaysUntilTheAnswer() {
-        val machine = TestMachine { SignalId.WEAK_SUSTAINED }
+        val machine = TestMachine { SignalId.LONG }
         assertEquals(TestPhase.Idle, machine.phase)
-        assertEquals(SignalId.WEAK_SUSTAINED, machine.onBlankPressed())
-        assertEquals(TestPhase.Prompt(SignalId.WEAK_SUSTAINED), machine.phase)
-        assertEquals(SignalId.WEAK_SUSTAINED, machine.onBlankPressed())
-        assertEquals(TestPhase.Prompt(SignalId.WEAK_SUSTAINED), machine.phase)
+        assertEquals(SignalId.LONG, machine.onBlankPressed())
+        assertEquals(TestPhase.Prompt(SignalId.LONG), machine.phase)
+        assertEquals(SignalId.LONG, machine.onBlankPressed())
+        assertEquals(TestPhase.Prompt(SignalId.LONG), machine.phase)
     }
 
     @Test
     fun answerGradesAndTheNextPressStartsOver() {
-        val queue = ArrayDeque(listOf(SignalId.WEAK_TAP, SignalId.STRONG_DOUBLE))
+        val queue = ArrayDeque(listOf(SignalId.SHORT, SignalId.LONG_SHORT))
         val machine = TestMachine { queue.removeFirst() }
 
         val played = machine.onBlankPressed()
-        val wrong = machine.answer(SignalId.STRONG_TAP)
+        val wrong = machine.answer(SignalId.MEDIUM)
         assertFalse(wrong.correct)
         assertEquals(played, wrong.signal)
-        assertEquals(SignalId.STRONG_TAP, wrong.choice)
+        assertEquals(SignalId.MEDIUM, wrong.choice)
         assertEquals(wrong, machine.phase)
 
         val next = machine.onBlankPressed()
-        assertEquals(SignalId.STRONG_DOUBLE, next)
+        assertEquals(SignalId.LONG_SHORT, next)
         assertTrue(machine.phase is TestPhase.Prompt)
-        val right = machine.answer(SignalId.STRONG_DOUBLE)
+        val right = machine.answer(SignalId.LONG_SHORT)
         assertTrue(right.correct)
     }
 
     @Test
     fun answerBeforeASignalIsRejected() {
-        val machine = TestMachine { SignalId.WEAK_TAP }
-        val error = runCatching { machine.answer(SignalId.WEAK_TAP) }.exceptionOrNull()
+        val machine = TestMachine { SignalId.SHORT }
+        val error = runCatching { machine.answer(SignalId.SHORT) }.exceptionOrNull()
         assertTrue(error is IllegalStateException)
         machine.onBlankPressed()
-        machine.answer(SignalId.WEAK_TAP)
-        val second = runCatching { machine.answer(SignalId.STRONG_TAP) }.exceptionOrNull()
+        machine.answer(SignalId.SHORT)
+        val second = runCatching { machine.answer(SignalId.MEDIUM) }.exceptionOrNull()
         assertTrue(second is IllegalStateException)
     }
 

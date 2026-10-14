@@ -30,7 +30,10 @@ class VibePlayer(context: Context) {
         val vibrator = vibrator
         if (vibrator == null || !vibrator.hasVibrator()) return PlayResult.MissingVibrator
         return try {
-            Log.i(TAG, "waveform timings=${waveform.timingsMs} amplitudes=${waveform.amplitudes}")
+            Log.i(
+                TAG,
+                "waveform timings=${waveform.timingsMs} amplitudes=${waveform.amplitudes} amplitudeControl=$hasAmplitudeControl",
+            )
             val effect = VibrationEffect.createWaveform(
                 waveform.timingsMs.toLongArray(),
                 waveform.amplitudes.toIntArray(),

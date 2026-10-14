@@ -1,36 +1,35 @@
 package com.tepmex.vibealphabet.core
 
-enum class Strength {
-    WEAK,
-    STRONG,
-}
-
-enum class Shape {
-    TAP,
-    SUSTAINED,
-    DOUBLE,
-}
-
-enum class SignalId(
-    val title: String,
-    val shape: Shape,
-    val strength: Strength,
-) {
-    WEAK_TAP("1", Shape.TAP, Strength.WEAK),
-    STRONG_TAP("2", Shape.TAP, Strength.STRONG),
-    WEAK_SUSTAINED("3", Shape.SUSTAINED, Strength.WEAK),
-    STRONG_SUSTAINED("4", Shape.SUSTAINED, Strength.STRONG),
-    WEAK_DOUBLE("5", Shape.DOUBLE, Strength.WEAK),
-    STRONG_DOUBLE("6", Shape.DOUBLE, Strength.STRONG),
-}
-
 const val REFERENCE_WINDOW_MS = 100
 const val DEFAULT_WINDOW_MS = 100
 const val MIN_WINDOW_MS = 50
 const val MAX_WINDOW_MS = 500
 const val WINDOW_STEP_MS = 50
-const val WEAK_AMPLITUDE = 90
-const val STRONG_AMPLITUDE = 255
+
+/** Включённый участок. Телефон не умеет менять силу, поэтому амплитуда всегда полная. */
+const val ON_AMPLITUDE = 255
+
+enum class SignalId(
+    val title: String,
+    val patternName: String,
+    val sensation: String,
+    val baseTimingsMs: List<Int>,
+) {
+    SHORT("1", "Короткий", "Тычок", listOf(20, 80)),
+    MEDIUM("2", "Средний", "Короткое гудение", listOf(50, 50)),
+    LONG("3", "Длинный", "Протяжённое гудение", listOf(90, 10)),
+    DOUBLE("4", "Двойной", "Два тычка", listOf(20, 50, 20, 10)),
+    SHORT_LONG("5", "Короткий–длинный", "Тычок, затем гудение", listOf(20, 20, 50, 10)),
+    LONG_SHORT("6", "Длинный–короткий", "Гудение, затем тычок", listOf(50, 20, 20, 10)),
+    ;
+
+    init {
+        require(baseTimingsMs.sum() == REFERENCE_WINDOW_MS) {
+            "Эталон «$patternName» должен занимать $REFERENCE_WINDOW_MS мс"
+        }
+        require(baseTimingsMs.all { it > 0 }) { "Участок «$patternName» должен быть длиннее 0 мс" }
+    }
+}
 
 val allowedWindowMillis: List<Int> =
     (MIN_WINDOW_MS..MAX_WINDOW_MS step WINDOW_STEP_MS).toList()
@@ -54,17 +53,16 @@ data class Waveform(
 /**
  * Команда мотору на всё окно, включая хвостовую тишину.
  * Эталон — 100 мс. Другое разрешённое окно умножает каждый участок на окно/100.
- * Амплитуды не масштабируются.
+ * Чётный участок включён на полной силе, нечётный выключен. Амплитуда не масштабируется.
  */
 fun waveformFor(signal: SignalId, windowMs: Int): Waveform {
     require(windowMs in allowedWindowMillis) {
         "Окно $windowMs мс недопустимо. Нужно от $MIN_WINDOW_MS до $MAX_WINDOW_MS с шагом $WINDOW_STEP_MS"
     }
-    val timings = baseTimings(signal.shape).map { segment ->
+    val timings = signal.baseTimingsMs.map { segment ->
         segment.toLong() * windowMs / REFERENCE_WINDOW_MS
     }
-    val level = if (signal.strength == Strength.STRONG) STRONG_AMPLITUDE else WEAK_AMPLITUDE
-    val amplitudes = timings.indices.map { index -> if (index % 2 == 0) level else 0 }
+    val amplitudes = timings.indices.map { index -> if (index % 2 == 0) ON_AMPLITUDE else 0 }
     val waveform = Waveform(timings, amplitudes)
     check(waveform.totalMs == windowMs.toLong()) {
         "Сумма участков ${waveform.totalMs} мс не равна окну $windowMs мс"
@@ -72,20 +70,8 @@ fun waveformFor(signal: SignalId, windowMs: Int): Waveform {
     return waveform
 }
 
-fun shapeTitle(shape: Shape): String = when (shape) {
-    Shape.TAP -> "Короткий удар"
-    Shape.SUSTAINED -> "Протяжённая вибрация"
-    Shape.DOUBLE -> "Двойной удар"
-}
-
-/** Подпись команды: «20 мс · 90, 80 мс тишина». */
+/** Подпись команды: «20 мс включён, 80 мс выключен». */
 fun formatSegments(waveform: Waveform): String =
     waveform.timingsMs.zip(waveform.amplitudes).joinToString(", ") { (duration, amplitude) ->
-        if (amplitude == 0) "$duration мс тишина" else "$duration мс · $amplitude"
+        if (amplitude == 0) "$duration мс выключен" else "$duration мс включён"
     }
-
-private fun baseTimings(shape: Shape): List<Int> = when (shape) {
-    Shape.TAP -> listOf(20, 80)
-    Shape.SUSTAINED -> listOf(90, 10)
-    Shape.DOUBLE -> listOf(20, 50, 20, 10)
-}

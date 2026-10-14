@@ -11,7 +11,7 @@ The layout, CI pipeline, and Android sideload signing match [CloudAgenticCoding]
 | Folder | Live site | Description |
 | ------ | --------- | ----------- |
 | [haptic-lab](haptic-lab/) | [haptic-lab](https://tepmex.github.io/TactileReadingExperiments/haptic-lab/) | Native Android lab for spatial tactile reading: vibrator diagnostics, a signal generator, zone patterns, a speed test, psychophysics, and a small tactile alphabet. |
-| [vibe-alphabet](vibe-alphabet/) | [vibe-alphabet](https://tepmex.github.io/TactileReadingExperiments/vibe-alphabet/) | Native Android trainer for six vibration signals: three time patterns at two strengths, with learn, test, and duration settings. |
+| [vibe-alphabet](vibe-alphabet/) | [vibe-alphabet](https://tepmex.github.io/TactileReadingExperiments/vibe-alphabet/) | Native Android trainer for six vibration signals distinguished by on/off timing, with learn, test, and duration settings. |
 
 ## Pipeline
 

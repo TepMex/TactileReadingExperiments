@@ -81,8 +81,6 @@ fun LearnScreen() {
         )
         if (!graph.player.hasVibrator) {
             Notice("На этом устройстве нет вибромотора.")
-        } else if (!graph.player.hasAmplitudeControl) {
-            Notice("Нет управления амплитудой: слабый и сильный сожмутся в одну силу.")
         }
         notice?.let { Notice(it) }
         SignalId.entries.forEach { signal ->
@@ -99,7 +97,15 @@ fun LearnScreen() {
                 },
             ) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(signal.title, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "${signal.title} · ${signal.patternName}",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        signal.sensation,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     Spacer(Modifier.height(8.dp))
                     WaveformStrip(
                         waveform = waveform,
