@@ -36,7 +36,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tepmex.vibealphabet.core.SignalId
 import com.tepmex.vibealphabet.core.TestMachine
 import com.tepmex.vibealphabet.core.TestPhase
-import com.tepmex.vibealphabet.core.waveformFor
 import com.tepmex.vibealphabet.haptics.PlayResult
 import com.tepmex.vibealphabet.ui.AppGraph
 import com.tepmex.vibealphabet.ui.LocalGraph
@@ -74,7 +73,7 @@ class TestViewModel(private val graph: AppGraph) : ViewModel() {
     private fun play(signal: SignalId) {
         playJob?.cancel()
         graph.player.stop()
-        val waveform = waveformFor(signal, graph.windowMs)
+        val waveform = graph.waveform(signal)
         when (val result = graph.player.play(waveform)) {
             PlayResult.Played -> {
                 notice = null

@@ -29,8 +29,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.tepmex.vibealphabet.core.Pattern
+import com.tepmex.vibealphabet.core.SignalId
+import com.tepmex.vibealphabet.core.Waveform
+import com.tepmex.vibealphabet.core.defaultPattern
 import com.tepmex.vibealphabet.core.normalizeWindow
-import com.tepmex.vibealphabet.data.WindowPreference
+import com.tepmex.vibealphabet.data.AlphabetPreference
 import com.tepmex.vibealphabet.haptics.VibePlayer
 import com.tepmex.vibealphabet.ui.learn.LearnScreen
 import com.tepmex.vibealphabet.ui.settings.SettingsScreen
@@ -39,15 +43,34 @@ import com.tepmex.vibealphabet.ui.theme.Ink
 
 class AppGraph(app: Application) {
     val player = VibePlayer(app)
-    private val preference = WindowPreference(app)
-    var windowMs by mutableStateOf(preference.read())
+    private val preference = AlphabetPreference(app)
+    var book by mutableStateOf(preference.read())
         private set
+
+    val windowMs: Int get() = book.windowMs
 
     fun setWindow(ms: Int) {
         val stored = normalizeWindow(ms)
         if (stored != ms || stored == windowMs) return
-        windowMs = stored
-        preference.write(stored)
+        book = book.withWindow(stored)
+        preference.write(book)
+    }
+
+    fun pattern(signal: SignalId): Pattern = book.pattern(signal)
+
+    fun waveform(signal: SignalId): Waveform = pattern(signal).toWaveform()
+
+    fun isEdited(signal: SignalId): Boolean = book.isEdited(signal)
+
+    fun updatePattern(signal: SignalId, pattern: Pattern) {
+        val next = book.withPattern(signal, pattern)
+        if (next == book) return
+        book = next
+        preference.write(book)
+    }
+
+    fun resetPattern(signal: SignalId) {
+        updatePattern(signal, defaultPattern(signal, windowMs))
     }
 }
 

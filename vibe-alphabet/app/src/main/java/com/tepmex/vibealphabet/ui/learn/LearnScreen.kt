@@ -1,7 +1,9 @@
 package com.tepmex.vibealphabet.ui.learn
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,12 +20,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tepmex.vibealphabet.core.SignalId
 import com.tepmex.vibealphabet.core.formatSegments
-import com.tepmex.vibealphabet.core.waveformFor
 import com.tepmex.vibealphabet.haptics.PlayResult
 import com.tepmex.vibealphabet.ui.LocalGraph
 import com.tepmex.vibealphabet.ui.components.WaveformStrip
@@ -37,6 +42,7 @@ fun LearnScreen() {
     val scope = rememberCoroutineScope()
     var playing by remember { mutableStateOf<SignalId?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
+    var editingName by rememberSaveable { mutableStateOf<String?>(null) }
     val job = remember { mutableStateOf<Job?>(null) }
     DisposableEffect(Unit) {
         onDispose { job.value?.cancel() }
@@ -45,7 +51,7 @@ fun LearnScreen() {
     fun play(signal: SignalId) {
         job.value?.cancel()
         graph.player.stop()
-        val waveform = waveformFor(signal, graph.windowMs)
+        val waveform = graph.waveform(signal)
         when (val result = graph.player.play(waveform)) {
             PlayResult.Played -> {
                 notice = null
@@ -75,7 +81,7 @@ fun LearnScreen() {
     ) {
         Text("Обучение", style = MaterialTheme.typography.headlineSmall)
         Text(
-            "Нажмите сигнал. Окно ${graph.windowMs} мс — это команда целиком, вместе с тишиной.",
+            "Нажмите сигнал, чтобы прослушать его. «Изменить» задаёт промежутки вибрации и тишины внутри окна ${graph.windowMs} мс.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -84,10 +90,10 @@ fun LearnScreen() {
         }
         notice?.let { Notice(it) }
         SignalId.entries.forEach { signal ->
-            val waveform = waveformFor(signal, graph.windowMs)
+            val waveform = graph.waveform(signal)
             val active = playing == signal
+            val editing = editingName == signal.name
             Surface(
-                onClick = { play(signal) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 color = if (active) {
@@ -97,30 +103,82 @@ fun LearnScreen() {
                 },
             ) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(
-                        "${signal.title} · ${signal.patternName}",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        signal.sensation,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(role = Role.Button, onClick = { play(signal) }),
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "${signal.title} · ${signal.patternName}",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (graph.isEdited(signal)) {
+                                Text(
+                                    "изменён",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                        Text(
+                            signal.sensation,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        WaveformStrip(
+                            waveform = waveform,
+                            active = active,
+                            onColor = MaterialTheme.colorScheme.primary,
+                            offColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                        )
+                        Text(
+                            formatSegments(waveform),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
-                    WaveformStrip(
-                        waveform = waveform,
-                        active = active,
-                        onColor = MaterialTheme.colorScheme.primary,
-                        offColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                    )
-                    Text(
-                        formatSegments(waveform),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (editing) {
+                        SignalEditor(
+                            pattern = graph.pattern(signal),
+                            edited = graph.isEdited(signal),
+                            onPattern = { graph.updatePattern(signal, it) },
+                            onReset = { graph.resetPattern(signal) },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    EditorToggle(if (editing) "Готово" else "Изменить") {
+                        editingName = if (editing) null else signal.name
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EditorToggle(label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Text(
+            label,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
