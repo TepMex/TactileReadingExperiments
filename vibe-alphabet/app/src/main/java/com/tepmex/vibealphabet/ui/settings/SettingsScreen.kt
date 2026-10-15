@@ -21,7 +21,6 @@ import com.tepmex.vibealphabet.core.MIN_WINDOW_MS
 import com.tepmex.vibealphabet.core.SignalId
 import com.tepmex.vibealphabet.core.allowedWindowMillis
 import com.tepmex.vibealphabet.core.formatSegments
-import com.tepmex.vibealphabet.core.waveformFor
 import com.tepmex.vibealphabet.ui.LocalGraph
 import kotlin.math.abs
 
@@ -65,7 +64,7 @@ fun SettingsScreen() {
             }
         }
         Text(
-            "Окно — длина команды, включая тишину. Шесть рисунков делят одно окно и масштабируются от эталона 100 мс. Включённый участок всегда на полной силе, выключенный — тишина. Сигналы различаются только временем, поэтому они остаются разными и без управления амплитудой. Команда не равна ощущению: мотору нужно время разогнаться и остановиться.",
+            "Окно — длина команды, включая тишину. На обучении у каждого сигнала свои промежутки вибрации и тишины; в сумме они равны окну. Если окно изменить, промежутки масштабируются и снова заполняют его целиком. Включённый участок всегда на полной силе. Команда не равна ощущению: мотору нужно время разогнаться и остановиться.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -73,11 +72,12 @@ fun SettingsScreen() {
         SignalId.entries.forEach { signal ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "${signal.title}. ${signal.patternName} — ${signal.sensation}",
+                    "${signal.title}. ${signal.patternName} — ${signal.sensation}" +
+                        if (graph.isEdited(signal)) " · изменён" else "",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
-                    formatSegments(waveformFor(signal, window)),
+                    formatSegments(graph.waveform(signal)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
