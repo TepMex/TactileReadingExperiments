@@ -37,6 +37,32 @@ val LearnGlyph: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+val SymbolGlyph: ImageVector = ImageVector.Builder(
+    name = "Symbols",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(fill = SolidColor(Color.Black)) {
+        moveTo(3f, 4f)
+        lineTo(11f, 4f)
+        lineTo(11f, 12f)
+        lineTo(3f, 12f)
+        close()
+        moveTo(13f, 4f)
+        lineTo(21f, 4f)
+        lineTo(21f, 12f)
+        lineTo(13f, 12f)
+        close()
+        moveTo(8f, 14f)
+        lineTo(16f, 14f)
+        lineTo(16f, 22f)
+        lineTo(8f, 22f)
+        close()
+    }
+}.build()
+
 val TestGlyph: ImageVector = ImageVector.Builder(
     name = "Test",
     defaultWidth = 24.dp,

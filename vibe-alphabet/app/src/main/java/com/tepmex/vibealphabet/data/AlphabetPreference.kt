@@ -1,9 +1,13 @@
 package com.tepmex.vibealphabet.data
 
 import android.content.Context
+import com.tepmex.vibealphabet.core.DrillSubject
 import com.tepmex.vibealphabet.core.PatternBook
 import com.tepmex.vibealphabet.core.SignalId
+import com.tepmex.vibealphabet.core.SymbolBook
+import com.tepmex.vibealphabet.core.decodeSymbolBook
 import com.tepmex.vibealphabet.core.encodePattern
+import com.tepmex.vibealphabet.core.encodeSymbolBook
 import com.tepmex.vibealphabet.core.patternBookFromStored
 
 class AlphabetPreference(context: Context) {
@@ -29,10 +33,27 @@ class AlphabetPreference(context: Context) {
         editor.apply()
     }
 
+    fun readSymbols(): SymbolBook = decodeSymbolBook(prefs.getString(SYMBOLS, null).orEmpty())
+
+    fun writeSymbols(book: SymbolBook) {
+        val editor = prefs.edit()
+        val encoded = encodeSymbolBook(book)
+        if (encoded.isEmpty()) editor.remove(SYMBOLS) else editor.putString(SYMBOLS, encoded)
+        editor.apply()
+    }
+
+    fun readDrillSubject(): DrillSubject = DrillSubject.fromStorage(prefs.getString(DRILL, null))
+
+    fun writeDrillSubject(subject: DrillSubject) {
+        prefs.edit().putString(DRILL, subject.storageKey).apply()
+    }
+
     private fun patternKey(signal: SignalId) = "pattern_${signal.title}"
 
     private companion object {
         const val FILE = "vibe_alphabet"
         const val WINDOW = "window_ms"
+        const val SYMBOLS = "symbols"
+        const val DRILL = "drill"
     }
 }
