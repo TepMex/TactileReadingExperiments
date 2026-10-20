@@ -29,22 +29,36 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.tepmex.vibealphabet.core.DrillSubject
 import com.tepmex.vibealphabet.core.Pattern
 import com.tepmex.vibealphabet.core.SignalId
+import com.tepmex.vibealphabet.core.Symbol
+import com.tepmex.vibealphabet.core.SymbolBook
 import com.tepmex.vibealphabet.core.Waveform
+import com.tepmex.vibealphabet.core.canonicalSpelling
 import com.tepmex.vibealphabet.core.defaultPattern
 import com.tepmex.vibealphabet.core.normalizeWindow
+import com.tepmex.vibealphabet.core.spellingIssue
+import com.tepmex.vibealphabet.core.waveformForSymbol
 import com.tepmex.vibealphabet.data.AlphabetPreference
 import com.tepmex.vibealphabet.haptics.VibePlayer
 import com.tepmex.vibealphabet.ui.learn.LearnScreen
 import com.tepmex.vibealphabet.ui.settings.SettingsScreen
+import com.tepmex.vibealphabet.ui.symbols.SymbolScreen
 import com.tepmex.vibealphabet.ui.test.TestScreen
 import com.tepmex.vibealphabet.ui.theme.Ink
+import java.util.UUID
 
 class AppGraph(app: Application) {
     val player = VibePlayer(app)
     private val preference = AlphabetPreference(app)
     var book by mutableStateOf(preference.read())
+        private set
+
+    var symbols by mutableStateOf(preference.readSymbols())
+        private set
+
+    var drillSubject by mutableStateOf(preference.readDrillSubject())
         private set
 
     val windowMs: Int get() = book.windowMs
@@ -72,6 +86,54 @@ class AppGraph(app: Application) {
     fun resetPattern(signal: SignalId) {
         updatePattern(signal, defaultPattern(signal, windowMs))
     }
+
+    fun selectDrill(subject: DrillSubject) {
+        if (subject == drillSubject) return
+        drillSubject = subject
+        preference.writeDrillSubject(subject)
+    }
+
+    fun addSymbol(spelling: String, first: SignalId): Symbol? {
+        if (spellingIssue(spelling, symbols, null) != null) return null
+        val canonical = canonicalSpelling(spelling) ?: return null
+        val symbol = Symbol(UUID.randomUUID().toString(), canonical, listOf(first))
+        replaceSymbols(symbols.withSymbol(symbol))
+        return symbol
+    }
+
+    fun renameSymbol(id: String, spelling: String): Boolean {
+        if (symbols.symbol(id) == null || spellingIssue(spelling, symbols, id) != null) return false
+        replaceSymbols(symbols.renamed(id, spelling))
+        return true
+    }
+
+    fun appendSymbolSignal(id: String, signal: SignalId) {
+        replaceSymbols(symbols.appendSignal(id, signal))
+    }
+
+    fun removeSymbolSignalAt(id: String, index: Int) {
+        replaceSymbols(symbols.removeSignalAt(id, index))
+    }
+
+    fun moveSymbolSignal(id: String, index: Int, delta: Int) {
+        replaceSymbols(symbols.moveSignal(id, index, delta))
+    }
+
+    fun moveSymbol(id: String, delta: Int) {
+        replaceSymbols(symbols.move(id, delta))
+    }
+
+    fun removeSymbol(id: String) {
+        replaceSymbols(symbols.without(id))
+    }
+
+    fun symbolWaveform(symbol: Symbol): Waveform = waveformForSymbol(symbol, book)
+
+    private fun replaceSymbols(next: SymbolBook) {
+        if (next == symbols) return
+        symbols = next
+        preference.writeSymbols(next)
+    }
 }
 
 class GraphHolder(app: Application) : AndroidViewModel(app) {
@@ -82,6 +144,7 @@ val LocalGraph = staticCompositionLocalOf<AppGraph> { error("Граф прило
 
 private enum class Tab(val label: String, val icon: ImageVector) {
     Learn("Обучение", LearnGlyph),
+    Symbols("Символы", SymbolGlyph),
     Test("Тест", TestGlyph),
     Settings("Настройки", SettingsGlyph),
 }
@@ -128,6 +191,7 @@ fun VibeAlphabetApp(graph: AppGraph) {
             ) {
                 when (tab) {
                     Tab.Learn -> LearnScreen()
+                    Tab.Symbols -> SymbolScreen()
                     Tab.Test -> TestScreen()
                     Tab.Settings -> SettingsScreen()
                 }

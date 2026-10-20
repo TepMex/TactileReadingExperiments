@@ -13,34 +13,33 @@ sealed interface TestPhase {
 }
 
 /**
- * Одно испытание за раз.
- * До ответа повторное нажатие круглой кнопки отдаёт тот же сигнал.
- * После ответа следующее нажатие начинает испытание заново.
+ * Испытание сигналов. Правила те же, что у [DrillMachine]:
+ * до ответа повтор отдаёт тот же сигнал, после ответа следующее нажатие начинает заново.
  */
 class TestMachine(
-    private val nextSignal: () -> SignalId,
+    nextSignal: () -> SignalId,
 ) {
     constructor(random: Random = Random.Default) : this({
         SignalId.entries[random.nextInt(SignalId.entries.size)]
     })
 
-    var phase: TestPhase = TestPhase.Idle
-        private set
+    private val drill = DrillMachine(nextSignal)
 
-    fun onBlankPressed(): SignalId = when (val current = phase) {
-        is TestPhase.Prompt -> current.signal
-        is TestPhase.Idle, is TestPhase.Result -> {
-            val signal = nextSignal()
-            phase = TestPhase.Prompt(signal)
-            signal
+    val phase: TestPhase
+        get() = when (val current = drill.phase) {
+            DrillPhase.Idle -> TestPhase.Idle
+            is DrillPhase.Prompt -> TestPhase.Prompt(current.item)
+            is DrillPhase.Result -> TestPhase.Result(current.item, current.choice)
         }
-    }
+
+    fun onBlankPressed(): SignalId = drill.onBlankPressed()
 
     fun answer(choice: SignalId): TestPhase.Result {
-        val prompt = phase as? TestPhase.Prompt
-            ?: error("Ответ принимается после сигнала, до него выбора нет")
-        val result = TestPhase.Result(prompt.signal, choice)
-        phase = result
-        return result
+        val result = try {
+            drill.answer(choice)
+        } catch (error: IllegalStateException) {
+            error("Ответ принимается после сигнала, до него выбора нет")
+        }
+        return TestPhase.Result(result.item, result.choice)
     }
 }
